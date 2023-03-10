@@ -2,9 +2,6 @@ provider "aws" {
   region = var.region
 }
 
-data "aws_availability_zones" "available" {}
-
-
 data "terraform_remote_state" "hcpstack" {
   backend = "remote"
 

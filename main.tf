@@ -20,7 +20,7 @@ data "terraform_remote_state" "hcpstack" {
 data "aws_subnets" "vpcsubnets" {
   filter {
     name   = "vpc-id"
-    values = [terraform_remote_state.hcpstack.outputs.vpc_id]
+    values = [data.terraform_remote_state.hcpstack.outputs.vpc_id]
   }
 }
 

@@ -16,21 +16,42 @@ data "terraform_remote_state" "hcpstack" {
   }
 }
 
+resource "aws_subnet" "ekssubnet1" {
+  vpc_id     = data.terraform_remote_state.hcpstack.outputs.vpc_id
+  cidr_block = "172.31.16.0/20"
+
+  tags = {
+    Name = "EKS-Subnet1"
+  }
+}
+resource "aws_subnet" "ekssubnet2" {
+  vpc_id     = data.terraform_remote_state.hcpstack.outputs.vpc_id
+  cidr_block = "172.31.32.0/20"
+
+  tags = {
+    Name = "EKS-Subnet2"
+  }
+}
+resource "aws_subnet" "ekssubnet3" {
+  vpc_id     = data.terraform_remote_state.hcpstack.outputs.vpc_id
+  cidr_block = "172.31.0.0/20"
+
+  tags = {
+    Name = "EKS-Subnet3"
+  }
+}
+
 
 data "aws_subnets" "vpcsubnets" {
   filter {
     name   = "vpc-id"
     values = [data.terraform_remote_state.hcpstack.outputs.vpc_id]
   }
-}
-
-resource "aws_subnet" "ekssubnet" {
-  vpc_id     = data.terraform_remote_state.hcpstack.outputs.vpc_id
-  cidr_block = "172.31.16.0/20"
-
-  tags = {
-    Name = "EKS-Subnet"
-  }
+  depends_on = [
+    aws_subnet.ekssubnet1,
+    aws_subnet.ekssubnet2,
+    aws_subnet.ekssubnet3
+  ]
 }
 
 
@@ -42,7 +63,7 @@ module "eks" {
   cluster_version = "1.24"
 
   vpc_id                         = data.terraform_remote_state.hcpstack.outputs.vpc_id
-  subnet_ids                     = aws_subnet.ekssubnet.id
+  subnet_ids                     = data.aws_subnets.vpcsubnets.ids
   cluster_endpoint_public_access = true
 
   eks_managed_node_group_defaults = {

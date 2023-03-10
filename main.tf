@@ -24,6 +24,15 @@ data "aws_subnets" "vpcsubnets" {
   }
 }
 
+resource "aws_subnet" "ekssubnet" {
+  vpc_id     = data.terraform_remote_state.hcpstack.outputs.vpc_id
+  cidr_block = "172.31.16.0/20"
+
+  tags = {
+    Name = "EKS-Subnet"
+  }
+}
+
 
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
@@ -33,7 +42,7 @@ module "eks" {
   cluster_version = "1.24"
 
   vpc_id                         = data.terraform_remote_state.hcpstack.outputs.vpc_id
-  subnet_ids                     = data.aws_subnets.vpcsubnets.ids
+  subnet_ids                     = aws_subnet.ekssubnet.id
   cluster_endpoint_public_access = true
 
   eks_managed_node_group_defaults = {

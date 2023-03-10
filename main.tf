@@ -24,6 +24,7 @@ data "aws_subnets" "vpcsubnets" {
   }
 }
 
+
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
   version = "19.5.1"
@@ -62,7 +63,7 @@ module "eks" {
     }
   }
 }
-    
+
 
 # https://aws.amazon.com/blogs/containers/amazon-ebs-csi-driver-is-now-generally-available-in-amazon-eks-add-ons/ 
 data "aws_iam_policy" "ebs_csi_policy" {

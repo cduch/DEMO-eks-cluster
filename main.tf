@@ -32,7 +32,7 @@ module "eks" {
   cluster_version = "1.24"
 
   vpc_id                         = data.terraform_remote_state.hcpstack.outputs.vpc_id
-  subnet_ids                     = data.aws_subnets.vpcsubnets
+  subnet_ids                     = data.aws_subnets.vpcsubnets.ids
   cluster_endpoint_public_access = true
 
   eks_managed_node_group_defaults = {

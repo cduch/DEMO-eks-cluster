@@ -16,9 +16,15 @@ data "terraform_remote_state" "hcpstack" {
   }
 }
 
+data "aws_availability_zones" "available" {
+  state = "available"
+}
+
 resource "aws_subnet" "ekssubnet1" {
   vpc_id     = data.terraform_remote_state.hcpstack.outputs.vpc_id
   cidr_block = "172.31.16.0/20"
+  availability_zone = data.aws_availability_zones.available.names[0]
+
 
   tags = {
     Name = "EKS-Subnet1"
@@ -27,6 +33,7 @@ resource "aws_subnet" "ekssubnet1" {
 resource "aws_subnet" "ekssubnet2" {
   vpc_id     = data.terraform_remote_state.hcpstack.outputs.vpc_id
   cidr_block = "172.31.32.0/20"
+  availability_zone = data.aws_availability_zones.available.names[1]
 
   tags = {
     Name = "EKS-Subnet2"
@@ -35,6 +42,8 @@ resource "aws_subnet" "ekssubnet2" {
 resource "aws_subnet" "ekssubnet3" {
   vpc_id     = data.terraform_remote_state.hcpstack.outputs.vpc_id
   cidr_block = "172.31.0.0/20"
+  availability_zone = data.aws_availability_zones.available.names[2]
+
 
   tags = {
     Name = "EKS-Subnet3"

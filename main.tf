@@ -31,7 +31,7 @@ module "eks" {
   cluster_name    = var.cluster_name
   cluster_version = "1.24"
 
-  vpc_id                         = terraform_remote_state.hcpstack.vpc_id
+  vpc_id                         = data.terraform_remote_state.hcpstack.vpc_id
   subnet_ids                     = data.aws_subnets.vpcsubnets
   cluster_endpoint_public_access = true
 

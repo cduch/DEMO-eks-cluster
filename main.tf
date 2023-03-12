@@ -3,6 +3,13 @@
 
 provider "aws" {
   region = var.region
+  default_tags {
+    tags = {
+      Environment = "Test"
+      Owner       = "TFProviders"
+      Project     = "Test"
+    }
+  }
 }
 
 data "aws_availability_zones" "available" {}
@@ -27,18 +34,18 @@ module "vpc" {
 
   public_subnet_tags = {
     "kubernetes.io/cluster/${var.cluster_name}" = "shared"
-    "kubernetes.io/role/elb"                      = 1
+    "kubernetes.io/role/elb"                    = 1
   }
 
   private_subnet_tags = {
     "kubernetes.io/cluster/${var.cluster_name}" = "shared"
-    "kubernetes.io/role/internal-elb"             = 1
+    "kubernetes.io/role/internal-elb"           = 1
   }
 }
 
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
-  version = "19.5.1"
+  version = "19.10.0"
 
   cluster_name    = var.cluster_name
   cluster_version = "1.24"
@@ -74,7 +81,7 @@ module "eks" {
     }
   }
 }
-    
+
 
 # https://aws.amazon.com/blogs/containers/amazon-ebs-csi-driver-is-now-generally-available-in-amazon-eks-add-ons/ 
 data "aws_iam_policy" "ebs_csi_policy" {
@@ -93,10 +100,10 @@ module "irsa-ebs-csi" {
 }
 
 resource "aws_eks_addon" "ebs-csi" {
-  cluster_name             = module.eks.cluster_name
-  addon_name               = "aws-ebs-csi-driver"
+  cluster_name = module.eks.cluster_name
+  addon_name   = "aws-ebs-csi-driver"
   #addon_version            = "v1.5.2-eksbuild.1"
-  addon_version            = "v1.16.1-eksbuild.1"  
+  addon_version            = "v1.16.1-eksbuild.1"
   service_account_role_arn = module.irsa-ebs-csi.iam_role_arn
   tags = {
     "eks_addon" = "ebs-csi"

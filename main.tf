@@ -1,65 +1,40 @@
+# Copyright (c) HashiCorp, Inc.
+# SPDX-License-Identifier: MPL-2.0
+
 provider "aws" {
   region = var.region
 }
 
-data "terraform_remote_state" "hcpstack" {
-  backend = "remote"
+data "aws_availability_zones" "available" {}
 
-  config = {
-    organization = "carstenduch"
-    workspaces = {
-      name = "HCP_Stack"
-    }
+
+
+module "vpc" {
+  source  = "terraform-aws-modules/vpc/aws"
+  version = "3.19.0"
+
+  name = "${var.cluster_name}-vpc"
+
+  cidr = "10.0.0.0/16"
+  azs  = slice(data.aws_availability_zones.available.names, 0, 3)
+
+  private_subnets = ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]
+  public_subnets  = ["10.0.4.0/24", "10.0.5.0/24", "10.0.6.0/24"]
+
+  enable_nat_gateway   = true
+  single_nat_gateway   = true
+  enable_dns_hostnames = true
+
+  public_subnet_tags = {
+    "kubernetes.io/cluster/${var.cluster_name}" = "shared"
+    "kubernetes.io/role/elb"                      = 1
+  }
+
+  private_subnet_tags = {
+    "kubernetes.io/cluster/${var.cluster_name}" = "shared"
+    "kubernetes.io/role/internal-elb"             = 1
   }
 }
-
-data "aws_availability_zones" "available" {
-  state = "available"
-}
-
-resource "aws_subnet" "ekssubnet1" {
-  vpc_id     = data.terraform_remote_state.hcpstack.outputs.vpc_id
-  cidr_block = "172.31.16.0/20"
-  availability_zone = data.aws_availability_zones.available.names[0]
-
-
-  tags = {
-    Name = "EKS-Subnet1"
-  }
-}
-resource "aws_subnet" "ekssubnet2" {
-  vpc_id     = data.terraform_remote_state.hcpstack.outputs.vpc_id
-  cidr_block = "172.31.32.0/20"
-  availability_zone = data.aws_availability_zones.available.names[1]
-
-  tags = {
-    Name = "EKS-Subnet2"
-  }
-}
-resource "aws_subnet" "ekssubnet3" {
-  vpc_id     = data.terraform_remote_state.hcpstack.outputs.vpc_id
-  cidr_block = "172.31.0.0/20"
-  availability_zone = data.aws_availability_zones.available.names[2]
-
-
-  tags = {
-    Name = "EKS-Subnet3"
-  }
-}
-
-
-data "aws_subnets" "vpcsubnets" {
-  filter {
-    name   = "vpc-id"
-    values = [data.terraform_remote_state.hcpstack.outputs.vpc_id]
-  }
-  depends_on = [
-    aws_subnet.ekssubnet1,
-    aws_subnet.ekssubnet2,
-    aws_subnet.ekssubnet3
-  ]
-}
-
 
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
@@ -68,8 +43,8 @@ module "eks" {
   cluster_name    = var.cluster_name
   cluster_version = "1.24"
 
-  vpc_id                         = data.terraform_remote_state.hcpstack.outputs.vpc_id
-  subnet_ids                     = data.aws_subnets.vpcsubnets.ids
+  vpc_id                         = module.vpc.vpc_id
+  subnet_ids                     = module.vpc.private_subnets
   cluster_endpoint_public_access = true
 
   eks_managed_node_group_defaults = {
@@ -99,7 +74,7 @@ module "eks" {
     }
   }
 }
-
+    
 
 # https://aws.amazon.com/blogs/containers/amazon-ebs-csi-driver-is-now-generally-available-in-amazon-eks-add-ons/ 
 data "aws_iam_policy" "ebs_csi_policy" {
@@ -120,7 +95,8 @@ module "irsa-ebs-csi" {
 resource "aws_eks_addon" "ebs-csi" {
   cluster_name             = module.eks.cluster_name
   addon_name               = "aws-ebs-csi-driver"
-  addon_version            = "v1.5.2-eksbuild.1"
+  #addon_version            = "v1.5.2-eksbuild.1"
+  addon_version            = "v1.16.1-eksbuild.1"  
   service_account_role_arn = module.irsa-ebs-csi.iam_role_arn
   tags = {
     "eks_addon" = "ebs-csi"

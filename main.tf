@@ -5,9 +5,9 @@ provider "aws" {
   region = var.region
   default_tags {
     tags = {
-      Environment = "Demo"
-      Owner       = "carsten@hashicorp.com"
-      Project     = "EKS"
+      Environment = var.environment
+      Owner       = var.owner
+      Project     = var.project
     }
   }
 }

@@ -8,3 +8,15 @@ variable "cluster_name" {
     type = string
     default ="eks-demo"
 }
+
+variable "owner" {
+  type = string
+}
+
+variable "project" {
+    type = string
+}
+
+variable "environment" {
+    type = string
+}
